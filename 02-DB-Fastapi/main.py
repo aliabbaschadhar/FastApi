@@ -35,12 +35,14 @@ def create(request: schemas.Blog, db: Session = Depends(get_db)):
     return new_blog  # Return the newly
 
 
+# Get all blogs
 @app.get("/blog")
 def all(db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).all()
     return blogs
 
 
+# Get the blog with Id
 @app.get("/blog/{id}", status_code=200)
 def blog(id: int, response: Response, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
@@ -67,6 +69,7 @@ def destroy(id: int, db: Session = Depends(get_db)):
     return {"detail": "Deleted Successfully"}
 
 
+# Update the blog with Id
 @app.put("/blog/{id}", status_code=status.HTTP_202_ACCEPTED)
 def update(id: int, request: schemas.Blog, db: Session = Depends(get_db)):
     blog_query = db.query(models.Blog).filter(models.Blog.id == id)
