@@ -34,4 +34,5 @@ class Blog(BaseModel):
 
 
 class ShowBlog(Blog):
-    pass
+    class Config:
+        orm_mode = True
