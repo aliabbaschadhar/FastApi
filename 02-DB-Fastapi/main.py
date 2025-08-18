@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, status, Response, HTTPException
 import models
 import schemas
 from database import (
@@ -25,7 +25,7 @@ def get_db():
 
 
 # The /blog endpoint now uses dependency injection to get a DB session
-@app.post("/blog")
+@app.post("/blog", status_code=status.HTTP_201_CREATED)
 def create(request: schemas.Blog, db: Session = Depends(get_db)):
     # Create a new Blog object from the request data
     new_blog = models.Blog(title=request.title, body=request.body)
@@ -41,7 +41,14 @@ def all(db: Session = Depends(get_db)):
     return blogs
 
 
-@app.get("/blog/{id}")
-def blog(id: int, db: Session = Depends(get_db)):
+@app.get("/blog/{id}", status_code=200)
+def blog(id: int, response: Response, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
+    if not blog:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Blog with id {id} is not available",
+        )
+        # response.status_code = status.HTTP_404_NOT_FOUND
+        # return {"details": f"Blog with id {id} is not available"}
     return blog
