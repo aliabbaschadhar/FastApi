@@ -25,6 +25,12 @@ def get_db():
         db.close()  # Ensure the session is closed after the request
 
 
+def dbOps(param, db: Session = Depends(get_db)):
+    db.add(param)
+    db.commit()
+    db.refresh(param)
+
+
 # The /blog endpoint now uses dependency injection to get a DB session
 @app.post("/blog", status_code=status.HTTP_201_CREATED)
 def create(request: schemas.Blog, db: Session = Depends(get_db)):
@@ -85,3 +91,17 @@ def update(id: int, request: schemas.Blog, db: Session = Depends(get_db)):
     )
     db.commit()
     return {"details": "Successfully updated the blog"}
+
+
+# Create User
+@app.post("/user")
+def createUser(request: schemas.User, db: Session = Depends(get_db)):
+    user = models.User(
+        name=request.name, password=request.password, email=request.email
+    )
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="User is not created"
+        )
+    dbOps(user, db)
+    return user
