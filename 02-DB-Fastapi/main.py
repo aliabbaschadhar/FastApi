@@ -7,6 +7,8 @@ from database import (
     SessionLocal,
 )  # SessionLocal is imported to create DB sessions
 from sqlalchemy.orm import Session
+from hashing import Hash
+
 
 app = FastAPI()
 
@@ -96,9 +98,8 @@ def update(id: int, request: schemas.Blog, db: Session = Depends(get_db)):
 # Create User
 @app.post("/user")
 def createUser(request: schemas.User, db: Session = Depends(get_db)):
-    user = models.User(
-        name=request.name, password=request.password, email=request.email
-    )
+    hashedPassword = Hash.bcrypt(request.password)
+    user = models.User(name=request.name, password=hashedPassword, email=request.email)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="User is not created"
