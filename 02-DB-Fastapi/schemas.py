@@ -3,6 +3,7 @@
 
 # Import Pydantic BaseModel for creating data validation schemas
 from pydantic import BaseModel
+from typing import List, Optional
 
 
 class Blog(BaseModel):
@@ -33,18 +34,45 @@ class Blog(BaseModel):
 # Response Models ==> Let's say in response we don't want to show the Id of the blog then we can create a  response model
 
 
-class ShowBlog(Blog):
-    class Config:
-        # orm_mode = True
-        from_attributes = True
-
-
 class User(BaseModel):
     email: str
     password: str
     name: str
 
 
-class ShowUser(User):
+# Minimal user schema for blog responses (no blogs to avoid recursion)
+class UserInBlog(BaseModel):
+    id: int
+    email: str
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
+# Minimal blog schema for user responses (no user to avoid recursion)
+class BlogInUser(BaseModel):
+    id: int
+    title: str
+    body: str
+
+    class Config:
+        from_attributes = True
+
+
+class ShowBlog(Blog):
+    id: int
+    user: Optional[UserInBlog]  # Use minimal user schema
+
+    class Config:
+        from_attributes = True
+
+
+class ShowUser(BaseModel):
+    id: int
+    email: str
+    name: str
+    blogs: List[BlogInUser] = []
+
     class Config:
         from_attributes = True

@@ -34,10 +34,15 @@ def dbOps(param, db: Session = Depends(get_db)):
 
 
 # The /blog endpoint now uses dependency injection to get a DB session
-@app.post("/blog", status_code=status.HTTP_201_CREATED, tags=["blogs"])
+@app.post(
+    "/blog",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.ShowBlog,
+    tags=["blogs"],
+)
 def create(request: schemas.Blog, db: Session = Depends(get_db)):
-    # Create a new Blog object from the request data
-    new_blog = models.Blog(title=request.title, body=request.body)
+    # For demo, assign user_id=1 or get from request/session
+    new_blog = models.Blog(title=request.title, body=request.body, user_id=1)
     db.add(new_blog)  # Add the new blog to the session
     db.commit()  # Commit the transaction to save it in the database
     db.refresh(new_blog)  # Refresh to get any DB-generated fields (like ID)
@@ -65,20 +70,17 @@ def blog(id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Blog with id {id} is not available",
         )
-        # response.status_code = status.HTTP_404_NOT_FOUND
-        # return {"details": f"Blog with id  {id} is not available"}
     return blog
 
 
 # Delete the blog
 @app.delete("/blog/{id}", status_code=status.HTTP_200_OK, tags=["blogs"])
 def destroy(id: int, db: Session = Depends(get_db)):
-    blog = db.query(models.Blog).filter(models.Blog.id == id).first()
-    if not blog:
+    blog = db.query(models.Blog).filter(models.Blog.id == id)
+    if not blog.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     blog.delete(synchronize_session=False)
-
     db.commit()
     return {"detail": "Deleted Successfully"}
 
@@ -108,6 +110,14 @@ def update(id: int, request: schemas.Blog, db: Session = Depends(get_db)):
     tags=["users"],
 )
 def createUser(request: schemas.User, db: Session = Depends(get_db)):
+    existing_user = (
+        db.query(models.User).filter(models.User.email == request.email).first()
+    )
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email already exists",
+        )
     hashedPassword = Hash.bcrypt(request.password)
     user = models.User(name=request.name, password=hashedPassword, email=request.email)
     if not user:
@@ -126,4 +136,4 @@ def getUser(email: str, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User is not present"
         )
-    return user
+    return user  # SQLAlchemy will load blogs due to relationship
