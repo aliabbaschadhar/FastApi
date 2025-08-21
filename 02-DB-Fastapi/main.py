@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import models
 from database import engine
-from routers import blog, user
+from routers import blog, user, authentication
 
 
 app = FastAPI(
@@ -13,6 +13,7 @@ app = FastAPI(
 # Include routers
 app.include_router(blog.router)
 app.include_router(user.router)
+app.include_router(authentication.router)
 
 # Create all database tables
 # This line creates all tables defined in models.py if they don't exist

@@ -76,3 +76,32 @@ class ShowUser(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class Login(BaseModel):
+    email: str
+    password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+
+class UserCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+
+    class Config:
+        from_attributes = True
