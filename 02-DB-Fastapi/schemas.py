@@ -35,10 +35,16 @@ class Blog(BaseModel):
 
 class ShowBlog(Blog):
     class Config:
-        orm_mode = True
+        # orm_mode = True
+        from_attributes = True
 
 
 class User(BaseModel):
     email: str
     password: str
     name: str
+
+
+class ShowUser(User):
+    class Config:
+        from_attributes = True

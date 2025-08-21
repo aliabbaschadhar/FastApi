@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import FastAPI, Depends, status, Response, HTTPException
+from fastapi import FastAPI, Depends, status, HTTPException
 import models
 import schemas
 from database import (
@@ -34,7 +34,7 @@ def dbOps(param, db: Session = Depends(get_db)):
 
 
 # The /blog endpoint now uses dependency injection to get a DB session
-@app.post("/blog", status_code=status.HTTP_201_CREATED)
+@app.post("/blog", status_code=status.HTTP_201_CREATED, tags=["blogs"])
 def create(request: schemas.Blog, db: Session = Depends(get_db)):
     # Create a new Blog object from the request data
     new_blog = models.Blog(title=request.title, body=request.body)
@@ -45,15 +45,20 @@ def create(request: schemas.Blog, db: Session = Depends(get_db)):
 
 
 # Get all blogs
-@app.get("/blog", status_code=status.HTTP_200_OK, response_model=List[schemas.ShowBlog])
+@app.get(
+    "/blog",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.ShowBlog],
+    tags=["blogs"],
+)
 def all(db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).all()
     return blogs
 
 
 # Get the blog with Id
-@app.get("/blog/{id}", status_code=200, response_model=schemas.ShowBlog)
-def blog(id: int, response: Response, db: Session = Depends(get_db)):
+@app.get("/blog/{id}", status_code=200, response_model=schemas.ShowBlog, tags=["blogs"])
+def blog(id: int, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
     if not blog:
         raise HTTPException(
@@ -66,7 +71,7 @@ def blog(id: int, response: Response, db: Session = Depends(get_db)):
 
 
 # Delete the blog
-@app.delete("/blog/{id}", status_code=status.HTTP_200_OK)
+@app.delete("/blog/{id}", status_code=status.HTTP_200_OK, tags=["blogs"])
 def destroy(id: int, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
     if not blog:
@@ -79,7 +84,7 @@ def destroy(id: int, db: Session = Depends(get_db)):
 
 
 # Update the blog with Id
-@app.put("/blog/{id}", status_code=status.HTTP_202_ACCEPTED)
+@app.put("/blog/{id}", status_code=status.HTTP_202_ACCEPTED, tags=["blogs"])
 def update(id: int, request: schemas.Blog, db: Session = Depends(get_db)):
     blog_query = db.query(models.Blog).filter(models.Blog.id == id)
     if not blog_query.first():
@@ -96,7 +101,12 @@ def update(id: int, request: schemas.Blog, db: Session = Depends(get_db)):
 
 
 # Create User
-@app.post("/user")
+@app.post(
+    "/user",
+    response_model=schemas.ShowUser,
+    status_code=status.HTTP_201_CREATED,
+    tags=["users"],
+)
 def createUser(request: schemas.User, db: Session = Depends(get_db)):
     hashedPassword = Hash.bcrypt(request.password)
     user = models.User(name=request.name, password=hashedPassword, email=request.email)
@@ -105,4 +115,15 @@ def createUser(request: schemas.User, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST, detail="User is not created"
         )
     dbOps(user, db)
+    return user
+
+
+# get user
+@app.get("/user/{email}", response_model=schemas.ShowUser, tags=["users"])
+def getUser(email: str, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User is not present"
+        )
     return user
