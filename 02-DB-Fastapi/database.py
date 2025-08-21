@@ -4,7 +4,11 @@
 # Import SQLAlchemy components
 from sqlalchemy import create_engine  # Creates database engine
 from sqlalchemy.ext.declarative import declarative_base  # Base class for ORM models
-from sqlalchemy.orm import sessionmaker  # Creates database sessions
+from sqlalchemy.orm import sessionmaker, Session
+from fastapi import Depends  # Dependency injection for FastAPI
+
+
+# Creates database sessions
 
 # Database URL configuration
 # SQLite database connection string pointing to a local file named 'blog.db'
@@ -30,3 +34,18 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 # This will be the base class for all our ORM models
 # All database models will inherit from this Base class
 Base = declarative_base()
+
+
+# Dependency function to provide a database session for each request
+def get_db():
+    db = SessionLocal()  # Create a new database session
+    try:
+        yield db  # Yield the session to be used in the request
+    finally:
+        db.close()  # Ensure the session is closed after the request
+
+
+def dbOps(param, db: Session = Depends(get_db)):
+    db.add(param)
+    db.commit()
+    db.refresh(param)
